@@ -130,7 +130,7 @@ help:
 	@echo "     android_sdk_install  - Install the Android SDK tools"
 	@echo "     gui_install          - Install the make gui tool"
 	@echo "     gtest_install        - Install the google unit test suite"
-	@echo "     astyle_install       - Install the astyle code formatter"	
+	@echo "     indent_install       - Install the gnu indent code formatter"
 	@echo
 	@echo "   [Big Hammer]"
 	@echo "     all                  - Generate UAVObjects, build openpilot firmware and gcs"
@@ -219,7 +219,7 @@ help:
 	@echo "                            the GCS and all target board firmwares."
 	@echo
 	@echo "   [Misc]"
-	@echo "     astyle_flight FILE=<name>   - Executes the astyle code formatter to reformat"
+	@echo "     indent_flight FILE=<name>   - Executes the indent code formatter to reformat"
 	@echo "                                   a c source file according to the flight code style"
 	@echo
 	@echo "   Hint: Add V=1 to your command line to see verbose build output."
@@ -282,11 +282,11 @@ else
   ANDROID_ADB ?= adb
 endif
 
-ifeq ($(shell [ -d "$(ASTYLE_DIR)" ] && echo "exists"), exists)
-  ASTYLE := $(ASTYLE_DIR)/bin/astyle
+ifeq ($(shell [ -d "$(INDENT_DIR)" ] && echo "exists"), exists)
+  INDENT := $(INDENT_DIR)/bin/indent
 else
   # not installed, hope it's in the path...
-  ASTYLE ?= astyle
+  INDENT ?= indent
 endif
 
 ##############################
@@ -996,18 +996,22 @@ package_resources:
 
 ##############################
 #
-# AStyle
+# GNU Indent
 #
 ##############################
 
-ifneq ($(strip $(filter astyle_flight,$(MAKECMDGOALS))),)
+ifneq ($(strip $(filter indent_flight,$(MAKECMDGOALS))),)
   ifeq ($(FILE),)
-    $(error pass files to astyle by adding FILE=<file> to the make command line)
+    $(error pass files to indent by adding FILE=<file> to the make command line)
   endif
 endif
 
-.PHONY: astyle_flight
-astyle_flight: ASTYLE_OPTIONS := --suffix=none --lineend=linux --mode=c --align-pointer=name --align-reference=name --indent=tab=4 --style=linux --pad-oper --pad-header --unpad-paren
-astyle_flight:
-	$(V1) $(ASTYLE) $(ASTYLE_OPTIONS) $(FILE)
+#
+# gnu indent options taken from:
+#   http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/tree/scripts/Lindent
+#
+.PHONY: indent_flight
+indent_flight: INDENT_OPTIONS := -npro -kr -i8 -ts8 -sob -l80 -ss -ncs -cp1 -il0
+indent_flight:
+	$(V1) $(INDENT) $(INDENT_OPTIONS) $(FILE)
 

@@ -435,35 +435,41 @@ else
 	 @echo "make gui not installed, run make gui_install"
 endif
 
+# Set up gnu indent
+INDENT_DIR := $(TOOLS_DIR)/indent
+INDENT_BUILD_DIR := $(DL_DIR)/indent
 
-# Set up astyle tools
-ASTYLE_DIR := $(TOOLS_DIR)/astyle
-ASTYLE_BUILD_DIR := $(DL_DIR)/astyle
+.PHONY: indent_install
+indent_install: | $(DL_DIR) $(TOOLS_DIR)
+indent_install: INDENT_URL := ftp://ftp.gnu.org/gnu/indent/indent-2.2.10.tar.gz
+indent_install: INDENT_FILE := $(notdir $(INDENT_URL))
+indent_install: INDENT_OPTIONS := prefix=$(INDENT_DIR)
+indent_install: indent_clean
+        # download the source only if it's newer than what we already have
+	$(V0) @echo " DOWNLOAD     $(INDENT_URL)"
+	$(V1) wget --no-check-certificate -N -P "$(DL_DIR)" "$(INDENT_URL)"
 
-.PHONY: astyle_install
-astyle_install: | $(DL_DIR) $(TOOLS_DIR)
-astyle_install: ASTYLE_URL := https://astyle.svn.sourceforge.net/svnroot/astyle/trunk/AStyle
-astyle_install: ASTYLE_REV := 376
-astyle_install: ASTYLE_OPTIONS := prefix=$(ASTYLE_DIR)
-astyle_install: astyle_clean
-        # download the source
-	$(V0) @echo " DOWNLOAD     $(ASTYLE_URL) @ $(ASTYLE_REV)"
-	$(V1) svn export -q "$(ASTYLE_URL)" -r $(ASTYLE_REV) "$(ASTYLE_BUILD_DIR)"
+        # extract the source
+	$(V1) [ ! -d "$(INDENT_BUILD_DIR)" ] || $(RM) -r "$(INDENT_BUILD_DIR)"
+	$(V1) mkdir -p "$(INDENT_BUILD_DIR)"
+	$(V1) tar -C $(INDENT_BUILD_DIR) -xaf "$(DL_DIR)/$(INDENT_FILE)"
 
         # build and install
-	$(V0) @echo " BUILD        $(ASTYLE_DIR)"
-	$(V1) mkdir -p "$(ASTYLE_DIR)"
+	$(V0) @echo " BUILD        $(INDENT_DIR)"
+	$(V1) mkdir -p "$(INDENT_DIR)"
 	$(V1) ( \
-	  $(MAKE) -C $(ASTYLE_BUILD_DIR)/build/gcc $(ASTYLE_OPTIONS) ; \
-	  $(MAKE) -C $(ASTYLE_BUILD_DIR)/build/gcc $(ASTYLE_OPTIONS) install ; \
+	  cd $(INDENT_BUILD_DIR)/indent-2.2.10 ; \
+	  ./configure $(INDENT_OPTIONS) ; \
+	  $(MAKE) --silent ; \
+	  $(MAKE) --silent install ; \
 	)
 
         # delete the extracted source when we're done
-	$(V1) [ ! -d "$(ASTYLE_BUILD_DIR)" ] || $(RM) -r "$(ASTYLE_BUILD_DIR)"
+	$(V1) [ ! -d "$(INDENT_BUILD_DIR)" ] || $(RM) -r "$(INDENT_BUILD_DIR)"
 
-.PHONY: astyle_clean
-astyle_clean:
-	$(V0) @echo " CLEAN        $(ASTYLE_DIR)"
-	$(V1) [ ! -d "$(ASTYLE_DIR)" ] || $(RM) -r "$(ASTYLE_DIR)"
-	$(V0) @echo " CLEAN        $(ASTYLE_BUILD_DIR)"
-	$(V1) [ ! -d "$(ASTYLE_BUILD_DIR)" ] || $(RM) -r "$(ASTYLE_BUILD_DIR)"
+.PHONY: indent_clean
+indent_clean:
+	$(V0) @echo " CLEAN        $(INDENT_DIR)"
+	$(V1) [ ! -d "$(INDENT_DIR)" ] || $(RM) -r "$(INDENT_DIR)"
+	$(V0) @echo " CLEAN        $(INDENT_BUILD_DIR)"
+	$(V1) [ ! -d "$(INDENT_BUILD_DIR)" ] || $(RM) -r "$(INDENT_BUILD_DIR)"
